@@ -1,6 +1,134 @@
-﻿@page "/Book"
-<h3>Book</h3>
+﻿@page "/book"
+@using PainBall5.Components.Models
+@using PainBall5.Components.Services
+@inject PaintballService PaintballService
+@inject NavigationManager nm
+@rendermode InteractiveServer
+
+<h2>Запись на игру</h2>
+
+@if (currentStep == 1)
+{
+    <div class="card">
+        <div class="card-body">
+            <h3>Создание команды</h3>
+            
+            <div class="form-group">
+                <label>Название команды</label>
+                <input class="form-control" placeholder="Введите название команды" @bind="newTeam.Name" />
+            </div>
+            
+            <div class="form-group">
+                <label>Имя капитана</label>
+                <input placeholder="Введите имя капитана" class="form-control" @bind="newTeam.CaptainName" />
+            </div>
+            
+            <div class="form-group">
+                <label>Телефон</label>
+                <input class="form-control" placeholder="+7(123)456-78-90" type="number" max="11" @bind="newTeam.Phone" />
+            </div>
+            
+            <div class="form-group">
+                <label>Количество игроков</label>
+                <input type="number" min="4" max="20" class="form-control" @bind="newTeam.PlayersCount" />
+            </div>
+            
+            <button class="btn btn-primary" @onclick=@CreateTeam>Далeе</button>
+        </div>
+    </div>
+}
+else if (currentStep == 2)
+{
+    <div class="card">
+        <div class="card-body">
+            <h3>Выберите время игры</h3>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Дата и время</th>
+                        <th>Свободных мест</th>
+                        <th>Цена за игрока</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var game in PaintballService.GetAvailableGames())
+                    {
+                        <tr>
+                            <td>@game.Date.ToString("g")</td>
+                            <td>@game.AvailableSlots</td>
+                            <td>@game.PricePerPlayer.ToString("C")</td>
+                            <td>
+                                <button class="btn btn-primary" @onclick="() => SelectGame(game.Id)">Выбрать</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            
+            <button class="btn btn-secondary" @onclick="() => currentStep = 1">Назад</button>
+        </div>
+    </div>
+}
+else if (currentStep == 3)
+{
+    <div class="card">
+        <div class="card-body">
+            <h3>Оплата</h3>
+            
+            <p>Команда: @PaintballService.GetTeam(teamId)?.Name</p>
+            <p>Дата игры: @PaintballService.GetGame(gameId)?.Date.ToString("g")</p>
+            <p>Количество игроков: @PaintballService.GetTeam(teamId)?.PlayersCount</p>
+            <p>Сумма к оплате: @(PaintballService.GetTeam(teamId)?.PlayersCount * PaintballService.GetGame(gameId)?.PricePerPlayer)</p>
+            
+            <div class="form-group">
+                <label>Номер карты</label>
+                <input class="form-control" @bind="cardNumber" />
+            </div>
+            
+            <button class="btn btn-success" @onclick="ProcessPayment">Оплатить</button>
+            <button class="btn btn-secondary" @onclick="() => currentStep = 2">Назад</button>
+        </div>
+    </div>
+}
+else if (currentStep == 4)
+{
+    <div class="alert alert-success">
+        <h3>Бронирование завершено!</h3>
+        <p>Ваша команда успешно зарегистрирована на игру.</p>
+    <button class="btn btn-primary" @onclick=@(() => nm.NavigateTo("/"))>На главную</button>
+    </div>
+}
 
 @code {
+    private int currentStep = 1;
+    private Team newTeam = new();
+    private int teamId;
+    private int gameId;
+    private string cardNumber = "";
     
+    private void CreateTeam()
+    {
+        PaintballService.AddTeam(newTeam);
+        teamId = newTeam.Id;
+        currentStep = 2;
+    }
+    
+    private void SelectGame(int selectedGameId)
+    {
+        gameId = selectedGameId;
+        PaintballService.CreateBooking(teamId, gameId);
+        currentStep = 3;
+    }
+    
+    private void ProcessPayment()
+    {
+        var team = PaintballService.GetTeam(teamId);
+        var game = PaintballService.GetGame(gameId);
+        var amount = team.PlayersCount * game.PricePerPlayer;
+        
+        PaintballService.ProcessPayment(teamId, amount);
+        currentStep = 4;
+    }
 }

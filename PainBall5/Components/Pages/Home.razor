@@ -1,7 +1,11 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using PainBall5.Components.Services
+@inject PaintballService PaintballService
+@inject NavigationManager nm
 
-<PageTitle>Home</PageTitle>
+<h1>Добро пожаловать в пейнтбольный клуб!</h1>
 
-<h1>Hello, world!</h1>
+<p>Забронируйте игру для своей команды прямо сейчас.</p>
 
-Welcome to your new app.
+<button class="btn btn-primary" @onclick=@(() => nm.NavigateTo("book"))>Забронировать игру</button>

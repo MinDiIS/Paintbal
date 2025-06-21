@@ -1,6 +1,32 @@
-﻿@page "/Bookings"
-<h3>Bookings</h3>
+﻿@page "/bookings"
+@using PainBall5.Components.Services
+@inject PaintballService PaintballService
+@rendermode InteractiveServer
 
-@code {
-    
-}
+<h2>Список бронирований</h2>
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Команда</th>
+        <th>Дата игры</th>
+        <th>Игроков</th>
+        <th>Статус оплаты</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var booking in PaintballService.GetAllBookings())
+    {
+        var team = PaintballService.GetTeam(booking.TeamId);
+        var game = PaintballService.GetGame(booking.GameId);
+        <tr>
+            <td>@booking.Id</td>
+            <td>@team?.Name</td>
+            <td>@game?.Date.ToString("g")</td>
+            <td>@team?.PlayersCount</td>
+            <td>@(booking.IsPaid ? "Оплачено" : "Не оплачено")</td>
+        </tr>
+    }
+    </tbody>
+</table>

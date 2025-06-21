@@ -1,6 +1,104 @@
-﻿@page "/Admin"
-<h3>Admin</h3>
+﻿@page "/admin"
+@using PainBall5.Components.Models
+@using PainBall5.Components.Services
+@rendermode  InteractiveServer
+@inject PaintballService PaintballService
+
+<h2>Администрирование</h2>
+
+<h3>Предстоящие игры</h3>
+<button class="btn btn-primary mb-3" @onclick="AddNewGame">Добавить игру</button>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Дата и время</th>
+            <th>Свободные места</th>
+            <th>Цена</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in PaintballService.GetAllGames())
+        {
+            <tr>
+                <td>@game.Id</td>
+                <td>@game.Date.ToString("g")</td>
+                <td>@game.AvailableSlots</td>
+                <td>@game.PricePerPlayer.ToString("C")</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" @onclick="(() => DeleteGame(game.Id))">Удалить</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (showAddGameDialog)
+{
+    <div class="modal" style="display:block; background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Новая игра</h5>
+                    <button type="button" class="close" @onclick="CloseDialog">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Дата и время</label>
+                        <input type="datetime-local" class="form-control" @bind="newGameDate" />
+                    </div>
+                    <div class="form-group">
+                        <label>Количество мест</label>
+                        <input type="number" class="form-control" @bind="newGameSlots" />
+                    </div>
+                    <div class="form-group">
+                        <label>Цена за игрока</label>
+                        <input type="number" class="form-control" @bind="newGamePrice" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" @onclick="SaveGame">Сохранить</button>
+                    <button class="btn btn-secondary" @onclick="CloseDialog">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
-    
+    private bool showAddGameDialog = false;
+    private DateTime newGameDate = DateTime.Now;
+    private int newGameSlots = 20;
+    private decimal newGamePrice = 1000;
+
+    private void AddNewGame()
+    {
+        showAddGameDialog = true;
+    }
+
+    private void CloseDialog()
+    {
+        showAddGameDialog = false;
+    }
+
+    private void SaveGame()
+    {
+        var game = new Game
+        {
+            Id = PaintballService.GetAllGames().Max(g => g.Id) + 1,
+            Date = newGameDate,
+            AvailableSlots = newGameSlots,
+            PricePerPlayer = newGamePrice
+        };
+        
+        PaintballService.AddGame(game);
+        showAddGameDialog = false;
+    }
+
+    private void DeleteGame(int id)
+    {
+        PaintballService.DeleteGame(id);
+    }
 }
